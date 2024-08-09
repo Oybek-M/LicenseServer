@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using LicenseServer.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace LicenseServer.Data.DbContexts
+namespace LicenseServer.Data.DbContexts;
+
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    internal class AppDbContext
-    {
-    }
+    public DbSet<LicenseKey> LicenseKeys { get; set; }
 }

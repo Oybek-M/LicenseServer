@@ -2,10 +2,9 @@
 
 namespace LicenseServer.Domain.Entities;
 
-public class LicenseKey
+public class LicenseKey : Base
 {
-    public int Id { get; set; }
-    public string KeyCode { get; set; }
+    public string KeyCode { get; set; } = "";
     public bool IsActive { get;set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime UpdatedDate { get; set;} = DateTime.Now;

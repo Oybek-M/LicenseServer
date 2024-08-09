@@ -1,11 +1,25 @@
+// USINGs
+using LicenseServer.Data.DbContexts;
+using Microsoft.EntityFrameworkCore;
+
+// _______________
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// DIA - Container
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("LocalDB"));
+    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+});
+// _______________
 
 var app = builder.Build();
 

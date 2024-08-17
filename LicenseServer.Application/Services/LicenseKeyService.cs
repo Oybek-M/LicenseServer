@@ -1,0 +1,136 @@
+﻿using LicenseServer.Application.DTOs.LicenseKeyDtos;
+using LicenseServer.Application.Common.Exceptions;
+using LicenseServer.Application.Interfaces;
+using LicenseServer.Data.Interfaces;
+using LicenseServer.Domain.Entities;
+using FluentValidation;
+using System.Net;
+
+namespace LicenseServer.Application.Services;
+
+public class LicenseKeyService(IUnitOfWork unitOfWork,
+                               IValidator<LicenseKey> validator)
+    : ILicenseKeyService
+{
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<LicenseKey> _validator = validator;
+
+    public async Task<bool> CreateAsync(AddLicenseKeyDto licenseKeyDto)
+    {
+        var result = await _validator.ValidateAsync(licenseKeyDto);
+
+        if (!result.IsValid)
+        {
+            try
+            {
+                await _unitOfWork.LicenseKey.CreateAsync(licenseKeyDto);
+                return true;
+            } catch(Exception ex)
+            {
+                return false;
+                throw new StatusCodeException(HttpStatusCode.BadGateway, ex.Message);
+            }
+        } else
+        {
+            return false;
+            throw new ValidatorException("Ma'lumotlar to'g'ri kiritilmagan");
+        }
+    }
+
+    public async Task<List<LicenseKeyDto>> GetAllAsync()
+    {
+        try
+        {
+            var licenseKeys = await _unitOfWork.LicenseKey.GetAllAsync();
+            var licenseKeyModel = licenseKeys.Select(item => (LicenseKeyDto)item).ToList();
+
+            return licenseKeyModel;
+        } catch(Exception ex)
+        {
+            return new List<LicenseKeyDto>();
+            throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
+        }
+    }
+
+    public async Task<LicenseKeyDto> GetByIdAsync(int id)
+    {
+        try
+        {
+            var licensekey = await _unitOfWork.LicenseKey
+                                              .GetByIdAsync(id);
+
+            return (LicenseKeyDto)licensekey;
+        } catch(Exception ex)
+        {
+            return new LicenseKeyDto();
+            throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
+        }
+    }
+
+    public async Task<LicenseKeyDto> GetByKeyCodeAsync(string licenseKeyCode)
+    {
+        try
+        {
+            var licenseKey = await _unitOfWork.LicenseKey
+                                              .GetByKeyCode(licenseKeyCode);
+
+            return (LicenseKeyDto)licenseKey;
+        }
+        catch (Exception ex)
+        {
+            return new LicenseKeyDto();
+            throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
+        }
+    }
+
+    public async Task<bool> UpdateAsync(LicenseKeyDto licenseKeyDto)
+    {
+        var licenseKey = _unitOfWork.LicenseKey.GetByIdAsync(licenseKeyDto.Id);
+        if(licenseKey is null)
+        {
+            return false;
+            throw new StatusCodeException(HttpStatusCode.NotFound, "Bunday Litsenziya topilmadi");
+        }
+
+
+        var result = await _validator.ValidateAsync(licenseKeyDto);
+
+        if (!result.IsValid)
+        {
+            try
+            {
+                await _unitOfWork.LicenseKey.CreateAsync(licenseKeyDto);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+                throw new StatusCodeException(HttpStatusCode.BadGateway, ex.Message);
+            }
+        }
+        else
+        {
+            return false;
+            throw new ValidatorException("Ma'lumotlar to'g'ri kiritilmagan");
+        }
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        try
+        {
+            var licenseKey = await _unitOfWork.LicenseKey.GetByIdAsync(id);
+            if (licenseKey is null)
+            {
+                throw new StatusCodeException(HttpStatusCode.NotFound, "Bunday Litseznsiya topilmadi");
+            }
+
+            await _unitOfWork.LicenseKey.DeleteAsync(licenseKey);
+            return true;
+        } catch(Exception ex)
+        {
+            return false;
+            throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
+        }
+    }
+}

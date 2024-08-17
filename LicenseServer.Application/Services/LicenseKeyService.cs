@@ -15,21 +15,19 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IValidator<LicenseKey> _validator = validator;
 
-    public async Task<bool> CreateAsync(List<AddLicenseKeyDto> licenseKeysDto)
+    public async Task<bool> CreateAsync(AddLicenseKeyDto licenseKeyDto, int count)
     {
-        if (licenseKeysDto.Any())
+        if (count >= 1 && count <= 100)
         {
-            foreach (var licenseKeyDto in licenseKeysDto)
-            {
-                var result = await _validator.ValidateAsync(licenseKeyDto);
+            var result = await _validator.ValidateAsync(licenseKeyDto);
 
-                if (!result.IsValid)
+            if(result.IsValid)
+            {
+                for (int i = 0; i <= count; i++)
                 {
                     try
                     {
                         await _unitOfWork.LicenseKey.CreateAsync(licenseKeyDto);
-                        return true;
-                        throw new StatusCodeException(HttpStatusCode.Created, "Muvaffaqiyatli yaratildi");
                     }
                     catch (Exception ex)
                     {
@@ -37,17 +35,19 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
                         throw new StatusCodeException(HttpStatusCode.BadGateway, ex.Message);
                     }
                 }
-                else
-                {
-                    return false;
-                    throw new ValidatorException("Ma'lumotlar to'g'ri kiritilmagan");
-                }
+
+                return true;
+                throw new StatusCodeException(HttpStatusCode.Created, "Muvaffaqiyatli yaratildi");
+            } else
+            {
+                return false;
+                throw new ValidatorException("Ma'lumotlar to'g'ri kiritilmagan");
             }
         }
         else
         {
             return false;
-            throw new StatusCodeException(HttpStatusCode.NoContent, "Litsenziya Kalitlari topilmadi");
+            throw new StatusCodeException(HttpStatusCode.BadRequest, "Bir urinish bilan 100 dan ortiq yaratib bo'lmaydi");
         }
     }
 
@@ -154,7 +154,7 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
 
 
     // Security: Check and Generate(Online/Offline)
-    public Task<(byte, string)> CheckKeyCode(string keyCode)
+    public Task<(int, string)> CheckKeyCode(string keyCode)
     {
         throw new NotImplementedException();
     }

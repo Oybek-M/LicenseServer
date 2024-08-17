@@ -1,9 +1,9 @@
-﻿using LicenseServer.Application.DTOs.LicenseKeyDtos;
+﻿using FluentValidation;
 using LicenseServer.Application.Common.Exceptions;
+using LicenseServer.Application.DTOs.LicenseKeyDtos;
 using LicenseServer.Application.Interfaces;
 using LicenseServer.Data.Interfaces;
 using LicenseServer.Domain.Entities;
-using FluentValidation;
 using System.Net;
 
 namespace LicenseServer.Application.Services;
@@ -15,25 +15,39 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IValidator<LicenseKey> _validator = validator;
 
-    public async Task<bool> CreateAsync(AddLicenseKeyDto licenseKeyDto)
+    public async Task<bool> CreateAsync(List<AddLicenseKeyDto> licenseKeysDto)
     {
-        var result = await _validator.ValidateAsync(licenseKeyDto);
-
-        if (!result.IsValid)
+        if (licenseKeysDto.Any())
         {
-            try
+            foreach (var licenseKeyDto in licenseKeysDto)
             {
-                await _unitOfWork.LicenseKey.CreateAsync(licenseKeyDto);
-                return true;
-            } catch(Exception ex)
-            {
-                return false;
-                throw new StatusCodeException(HttpStatusCode.BadGateway, ex.Message);
+                var result = await _validator.ValidateAsync(licenseKeyDto);
+
+                if (!result.IsValid)
+                {
+                    try
+                    {
+                        await _unitOfWork.LicenseKey.CreateAsync(licenseKeyDto);
+                        return true;
+                        throw new StatusCodeException(HttpStatusCode.Created, "Muvaffaqiyatli yaratildi");
+                    }
+                    catch (Exception ex)
+                    {
+                        return false;
+                        throw new StatusCodeException(HttpStatusCode.BadGateway, ex.Message);
+                    }
+                }
+                else
+                {
+                    return false;
+                    throw new ValidatorException("Ma'lumotlar to'g'ri kiritilmagan");
+                }
             }
-        } else
+        }
+        else
         {
             return false;
-            throw new ValidatorException("Ma'lumotlar to'g'ri kiritilmagan");
+            throw new StatusCodeException(HttpStatusCode.NoContent, "Litsenziya Kalitlari topilmadi");
         }
     }
 
@@ -45,7 +59,8 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
             var licenseKeyModel = licenseKeys.Select(item => (LicenseKeyDto)item).ToList();
 
             return licenseKeyModel;
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             return new List<LicenseKeyDto>();
             throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
@@ -60,7 +75,8 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
                                               .GetByIdAsync(id);
 
             return (LicenseKeyDto)licensekey;
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             return new LicenseKeyDto();
             throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
@@ -86,7 +102,7 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
     public async Task<bool> UpdateAsync(LicenseKeyDto licenseKeyDto)
     {
         var licenseKey = _unitOfWork.LicenseKey.GetByIdAsync(licenseKeyDto.Id);
-        if(licenseKey is null)
+        if (licenseKey is null)
         {
             return false;
             throw new StatusCodeException(HttpStatusCode.NotFound, "Bunday Litsenziya topilmadi");
@@ -127,10 +143,23 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
 
             await _unitOfWork.LicenseKey.DeleteAsync(licenseKey);
             return true;
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             return false;
             throw new StatusCodeException(HttpStatusCode.NotFound, ex.Message);
         }
     }
+
+
+
+    // Security: Check and Generate(Online/Offline)
+    public Task<(byte, string)> CheckKeyCode(string keyCode)
+    {
+        throw new NotImplementedException();
+    }
+
+
+
+    // ______________________________
 }

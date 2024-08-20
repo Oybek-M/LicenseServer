@@ -1,12 +1,22 @@
-﻿using FluentValidation;
+﻿using System.Runtime.CompilerServices;
+using System.Net;
+
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Identity.Client;
+
 using LicenseServer.Application.Common.Exceptions;
 using LicenseServer.Application.DTOs.LicenseKeyDtos;
 using LicenseServer.Application.Interfaces;
 using LicenseServer.Data.Interfaces;
 using LicenseServer.Domain.Entities;
-using System.Net;
+
+using FluentValidation;
+using System.Reflection.Metadata.Ecma335;
+using LicenseServer.Application.Common.Helper;
+
 
 namespace LicenseServer.Application.Services;
+
 
 public class LicenseKeyService(IUnitOfWork unitOfWork,
                                IValidator<LicenseKey> validator)
@@ -154,12 +164,14 @@ public class LicenseKeyService(IUnitOfWork unitOfWork,
 
 
     // Security: Check and Generate(Online/Offline)
+    public async Task<string> GetKeyCode(int lenght, int count)
+    {
+        return LicenseKeyHelper.GenerateLicenseKey(lenght, count);
+    }
+
     public Task<(int, string)> CheckKeyCode(string keyCode)
     {
         throw new NotImplementedException();
     }
-
-
-
     // ______________________________
 }
